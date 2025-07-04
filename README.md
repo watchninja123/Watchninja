@@ -171,7 +171,8 @@ end)
 -- Botão SUBIR
 local frameSubir = Instance.new("TextButton")
 frameSubir.Size = UDim2.new(0, 90, 0, 30)
-frameSubir.Position = UDim2.new(0, 10, 0.8, 0)
+frameSubir.Position = UDim2.new(1, -200, 1, -100)
+frameSubir.AnchorPoint = Vector2.new(0, 0)
 frameSubir.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frameSubir.Text = "↑ Subir"
 frameSubir.TextColor3 = Color3.fromRGB(255, 0, 0)
@@ -209,7 +210,8 @@ end)
 -- Botão DESCER
 local frameDescer = Instance.new("TextButton")
 frameDescer.Size = UDim2.new(0, 90, 0, 30)
-frameDescer.Position = UDim2.new(0, 110, 0.8, 0)
+frameDescer.Position = UDim2.new(1, -100, 1, -100)
+frameDescer.AnchorPoint = Vector2.new(0, 0)
 frameDescer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frameDescer.Text = "↓ Descer"
 frameDescer.TextColor3 = Color3.fromRGB(255, 0, 0)
