@@ -31,7 +31,7 @@ local function showNotification(text)
 	Debris:AddItem(note, 2)
 end
 
--- Função que adiciona arraste via toque ou mouse
+-- Função de arrastar UI
 local function enableDrag(frame)
 	local dragging, dragInput, startPos, startInputPos
 
@@ -61,7 +61,7 @@ local function enableDrag(frame)
 	end)
 end
 
--- Painel lateral
+-- Painel principal
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 180, 0, 210)
 frame.Position = UDim2.new(0, 20, 0.5, -105)
@@ -75,7 +75,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 10)
 corner.Parent = frame
 
--- Toggle Button (Menu)
+-- Botão de toggle
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 40, 0, 40)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -109,7 +109,7 @@ creditLabel.TextSize = 14
 creditLabel.TextXAlignment = Enum.TextXAlignment.Center
 creditLabel.Parent = frame
 
--- Função criar botões do painel
+-- Função para criar botões
 local function criarBotao(pai, texto, posY, callback)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 30)
@@ -128,7 +128,7 @@ local function criarBotao(pai, texto, posY, callback)
 	btn.MouseButton1Click:Connect(callback)
 end
 
--- Sub-Seções
+-- Funções de movimentação e velocidade
 local altura = 150
 local plataformaAerea
 local humanoid
@@ -145,34 +145,9 @@ local function atualizarVelocidade()
 	end
 end
 
-local function aplicarAntiRagdoll(character)
-	local humanoid = character:WaitForChild("Humanoid")
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-
-	-- Impede o uso de PlatformStand
-	humanoid:GetPropertyChangedSignal("PlatformStand"):Connect(function()
-		if humanoid.PlatformStand then
-			humanoid.PlatformStand = false
-		end
-	end)
-
-	-- Remove constraints que causam ragdoll
-	for _, obj in ipairs(character:GetDescendants()) do
-		if obj:IsA("BallSocketConstraint") or obj:IsA("HingeConstraint") then
-			obj:Destroy()
-		end
-	end
-
-	-- Deixa o HumanoidRootPart muito pesado
-	if hrp then
-		hrp.CustomPhysicalProperties = PhysicalProperties.new(1000, 0.3, 0.5)
-	end
-end
-
 local function onCharacterAdded(character)
 	humanoid = character:WaitForChild("Humanoid")
 	atualizarVelocidade()
-	aplicarAntiRagdoll(character)
 
 	humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
 		atualizarVelocidade()
@@ -182,16 +157,18 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
 	onCharacterAdded(player.Character)
+else
+	player.CharacterAdded:Wait()
 end
 
--- Velocidade
+-- Botões do painel principal
 criarBotao(frame, "⚡ Velocidade", 20, function()
 	speedEnabled = not speedEnabled
 	atualizarVelocidade()
 	showNotification(speedEnabled and "Velocidade ativada!" or "Velocidade desativada!")
 end)
 
--- BOTÃO SUBIR
+-- Botão SUBIR
 local frameSubir = Instance.new("TextButton")
 frameSubir.Size = UDim2.new(0, 90, 0, 30)
 frameSubir.Position = UDim2.new(0, 10, 0.8, 0)
@@ -200,28 +177,20 @@ frameSubir.Text = "↑ Subir"
 frameSubir.TextColor3 = Color3.fromRGB(255, 0, 0)
 frameSubir.Font = Enum.Font.GothamBold
 frameSubir.TextSize = 16
-frameSubir.Active = true
 frameSubir.Parent = screenGui
 
-local subirCorner = Instance.new("UICorner")
-subirCorner.CornerRadius = UDim.new(0, 6)
-subirCorner.Parent = frameSubir
-
+Instance.new("UICorner", frameSubir).CornerRadius = UDim.new(0, 6)
 enableDrag(frameSubir)
 
 frameSubir.MouseButton1Click:Connect(function()
 	local rootPart = getRootPart()
 	if rootPart then
 		local destino = rootPart.Position + Vector3.new(0, altura, 0)
-
 		local result = workspace:Raycast(rootPart.Position, Vector3.new(0, altura, 0), RaycastParams.new())
 		if result then
 			showNotification("Algo está acima!")
 		end
-
-		if plataformaAerea then
-			plataformaAerea:Destroy()
-		end
+		if plataformaAerea then plataformaAerea:Destroy() end
 
 		plataformaAerea = Instance.new("Part")
 		plataformaAerea.Size = Vector3.new(20, 4, 20)
@@ -237,7 +206,7 @@ frameSubir.MouseButton1Click:Connect(function()
 	end
 end)
 
--- BOTÃO DESCER
+-- Botão DESCER
 local frameDescer = Instance.new("TextButton")
 frameDescer.Size = UDim2.new(0, 90, 0, 30)
 frameDescer.Position = UDim2.new(0, 110, 0.8, 0)
@@ -246,28 +215,21 @@ frameDescer.Text = "↓ Descer"
 frameDescer.TextColor3 = Color3.fromRGB(255, 0, 0)
 frameDescer.Font = Enum.Font.GothamBold
 frameDescer.TextSize = 16
-frameDescer.Active = true
 frameDescer.Parent = screenGui
 
-local descerCorner = Instance.new("UICorner")
-descerCorner.CornerRadius = UDim.new(0, 6)
-descerCorner.Parent = frameDescer
-
+Instance.new("UICorner", frameDescer).CornerRadius = UDim.new(0, 6)
 enableDrag(frameDescer)
 
 frameDescer.MouseButton1Click:Connect(function()
 	local rootPart = getRootPart()
 	if rootPart then
 		rootPart.CFrame = rootPart.CFrame - Vector3.new(0, altura, 0)
-		if plataformaAerea then
-			plataformaAerea:Destroy()
-			plataformaAerea = nil
-		end
+		if plataformaAerea then plataformaAerea:Destroy() plataformaAerea = nil end
 		showNotification("Você desceu!")
 	end
 end)
 
--- 🧠 ESP de tempo de trava das bases
+-- ESP de tempo de trava das bases
 local function CreateTimeESP(plot)
 	local purchases = plot:FindFirstChild("Purchases")
 	if not purchases then return end
@@ -284,7 +246,6 @@ local function CreateTimeESP(plot)
 	local timeLabel = gui:FindFirstChild("RemainingTime")
 	if not timeLabel then return end
 
-	-- Criar ESP
 	local espGui = Instance.new("BillboardGui")
 	espGui.Name = "TimeESP"
 	espGui.Adornee = main
@@ -300,7 +261,6 @@ local function CreateTimeESP(plot)
 	text.TextScaled = true
 	text.Font = Enum.Font.SourceSansBold
 	text.Text = "..."
-
 	text.Parent = espGui
 	espGui.Parent = main
 
@@ -312,7 +272,6 @@ local function CreateTimeESP(plot)
 	end)
 end
 
--- Detectar qual é a sua base
 local myBaseName
 for _, plot in ipairs(workspace.Plots:GetChildren()) do
 	local yourBase = plot:FindFirstChild("YourBase", true)
@@ -322,9 +281,70 @@ for _, plot in ipairs(workspace.Plots:GetChildren()) do
 	end
 end
 
--- Criar ESP em todas as outras bases
 for _, plot in ipairs(workspace.Plots:GetChildren()) do
 	if plot.Name ~= myBaseName then
 		CreateTimeESP(plot)
 	end
 end
+
+-- ABA SERVIDORES
+local servidoresFrame = Instance.new("Frame")
+servidoresFrame.Size = UDim2.new(0, 180, 0, 210)
+servidoresFrame.Position = UDim2.new(0, 210, 0.5, -105)
+servidoresFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+servidoresFrame.BorderSizePixel = 0
+servidoresFrame.Visible = false
+servidoresFrame.Active = true
+servidoresFrame.Parent = screenGui
+
+Instance.new("UICorner", servidoresFrame).CornerRadius = UDim.new(0, 10)
+
+criarBotao(frame, "🌐 Servidores", 60, function()
+	servidoresFrame.Visible = not servidoresFrame.Visible
+end)
+
+criarBotao(servidoresFrame, "🔁 Reentrar", 20, function()
+	game:GetService("TeleportService"):Teleport(game.PlaceId)
+end)
+
+criarBotao(servidoresFrame, "🔄 Server Hop", 60, function()
+	local TeleportService = game:GetService("TeleportService")
+	local HttpService = game:GetService("HttpService")
+	local PlaceId = game.PlaceId
+
+	local function hop()
+		local req = syn and syn.request or http_request or request
+		if not req then
+			showNotification("Executor sem suporte HTTP")
+			return
+		end
+
+		local response = req({
+			Url = "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+		})
+
+		if response and response.Body then
+			local data = HttpService:JSONDecode(response.Body)
+			local servers = {}
+			for _, server in ipairs(data.data) do
+				if server.id ~= game.JobId and server.playing < server.maxPlayers then
+					table.insert(servers, server.id)
+				end
+			end
+			if #servers > 0 then
+				showNotification("Entrando em outro servidor...")
+				TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)], player)
+			else
+				showNotification("Nenhum servidor encontrado")
+			end
+		else
+			showNotification("Erro ao buscar servidores")
+		end
+	end
+
+	hop()
+end)
+
+criarBotao(servidoresFrame, "❌ Fechar Aba", 100, function()
+	servidoresFrame.Visible = false
+end)
