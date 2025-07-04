@@ -145,9 +145,34 @@ local function atualizarVelocidade()
 	end
 end
 
+local function aplicarAntiRagdoll(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+
+	-- Impede o uso de PlatformStand
+	humanoid:GetPropertyChangedSignal("PlatformStand"):Connect(function()
+		if humanoid.PlatformStand then
+			humanoid.PlatformStand = false
+		end
+	end)
+
+	-- Remove constraints que causam ragdoll
+	for _, obj in ipairs(character:GetDescendants()) do
+		if obj:IsA("BallSocketConstraint") or obj:IsA("HingeConstraint") then
+			obj:Destroy()
+		end
+	end
+
+	-- Deixa o HumanoidRootPart muito pesado
+	if hrp then
+		hrp.CustomPhysicalProperties = PhysicalProperties.new(1000, 0.3, 0.5)
+	end
+end
+
 local function onCharacterAdded(character)
 	humanoid = character:WaitForChild("Humanoid")
 	atualizarVelocidade()
+	aplicarAntiRagdoll(character)
 
 	humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
 		atualizarVelocidade()
@@ -157,8 +182,6 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
 	onCharacterAdded(player.Character)
-else
-	player.CharacterAdded:Wait()
 end
 
 -- Velocidade
@@ -188,27 +211,30 @@ enableDrag(frameSubir)
 
 frameSubir.MouseButton1Click:Connect(function()
 	local rootPart = getRootPart()
-	if not rootPart then return end
+	if rootPart then
+		local destino = rootPart.Position + Vector3.new(0, altura, 0)
 
-	local destino = rootPart.Position + Vector3.new(0, altura, 0)
+		local result = workspace:Raycast(rootPart.Position, Vector3.new(0, altura, 0), RaycastParams.new())
+		if result then
+			showNotification("Algo está acima!")
+		end
 
-	if plataformaAerea then
-		plataformaAerea:Destroy()
+		if plataformaAerea then
+			plataformaAerea:Destroy()
+		end
+
+		plataformaAerea = Instance.new("Part")
+		plataformaAerea.Size = Vector3.new(20, 4, 20)
+		plataformaAerea.Position = destino - Vector3.new(0, 2, 0)
+		plataformaAerea.Anchored = true
+		plataformaAerea.Transparency = 1
+		plataformaAerea.CanCollide = true
+		plataformaAerea.Name = "PlataformaAerea"
+		plataformaAerea.Parent = workspace
+
+		rootPart.CFrame = CFrame.new(destino, destino + rootPart.CFrame.LookVector)
+		showNotification("Teleportado para cima!")
 	end
-
-	plataformaAerea = Instance.new("Part")
-	plataformaAerea.Size = Vector3.new(20, 1, 20) -- Plataforma fina para pisar
-	plataformaAerea.Position = destino - Vector3.new(0, 0.5, 0) -- Ajuste para plataforma ficar sob os pés
-	plataformaAerea.Anchored = true
-	plataformaAerea.CanCollide = true
-	plataformaAerea.Transparency = 1 -- Invisível
-	plataformaAerea.Name = "PlataformaAerea"
-	plataformaAerea.Parent = workspace
-
-	-- Teleporta o personagem para cima, mantendo a orientação
-	rootPart.CFrame = rootPart.CFrame + Vector3.new(0, altura + 3, 0)
-
-	showNotification("Você subiu para a plataforma!")
 end)
 
 -- BOTÃO DESCER
@@ -231,18 +257,14 @@ enableDrag(frameDescer)
 
 frameDescer.MouseButton1Click:Connect(function()
 	local rootPart = getRootPart()
-	if not rootPart then return end
-
-	-- Remove a plataforma aérea se existir
-	if plataformaAerea then
-		plataformaAerea:Destroy()
-		plataformaAerea = nil
+	if rootPart then
+		rootPart.CFrame = rootPart.CFrame - Vector3.new(0, altura, 0)
+		if plataformaAerea then
+			plataformaAerea:Destroy()
+			plataformaAerea = nil
+		end
+		showNotification("Você desceu!")
 	end
-
-	-- Teleporta o jogador para o chão (subtraindo altura)
-	rootPart.CFrame = rootPart.CFrame - Vector3.new(0, altura, 0)
-
-	showNotification("Você desceu para o chão!")
 end)
 
 -- 🧠 ESP de tempo de trava das bases
